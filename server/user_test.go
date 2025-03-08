@@ -1,4 +1,4 @@
-package todo
+package user
 
 import (
 	"GabrielPedroza/WanderSync/ent"
@@ -25,7 +25,7 @@ func User_Test() {
 
 	task1, err := client.User.Create().SetName("Gabriel").SetAge(23).Save(ctx)
 	if err != nil {
-		log.Fatalf("failed creating a todo: %v", err)
+		log.Fatalf("failed creating a user: %v", err)
 	}
 
 	fmt.Println(task1)
