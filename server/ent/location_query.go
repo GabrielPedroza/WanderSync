@@ -260,6 +260,18 @@ func (lq *LocationQuery) Clone() *LocationQuery {
 
 // GroupBy is used to group vertices by one or more fields/columns.
 // It is often used with aggregate functions, like: count, max, mean, min, sum.
+//
+// Example:
+//
+//	var v []struct {
+//		Name string `json:"name,omitempty"`
+//		Count int `json:"count,omitempty"`
+//	}
+//
+//	client.Location.Query().
+//		GroupBy(location.FieldName).
+//		Aggregate(ent.Count()).
+//		Scan(ctx, &v)
 func (lq *LocationQuery) GroupBy(field string, fields ...string) *LocationGroupBy {
 	lq.ctx.Fields = append([]string{field}, fields...)
 	grbuild := &LocationGroupBy{build: lq}
@@ -271,6 +283,16 @@ func (lq *LocationQuery) GroupBy(field string, fields ...string) *LocationGroupB
 
 // Select allows the selection one or more fields/columns for the given query,
 // instead of selecting all fields in the entity.
+//
+// Example:
+//
+//	var v []struct {
+//		Name string `json:"name,omitempty"`
+//	}
+//
+//	client.Location.Query().
+//		Select(location.FieldName).
+//		Scan(ctx, &v)
 func (lq *LocationQuery) Select(fields ...string) *LocationSelect {
 	lq.ctx.Fields = append(lq.ctx.Fields, fields...)
 	sbuild := &LocationSelect{LocationQuery: lq}

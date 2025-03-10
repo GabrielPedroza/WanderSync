@@ -5,6 +5,7 @@ package ent
 import (
 	"GabrielPedroza/WanderSync/ent/location"
 	"context"
+	"errors"
 	"fmt"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -18,6 +19,20 @@ type LocationCreate struct {
 	hooks    []Hook
 }
 
+// SetName sets the "name" field.
+func (lc *LocationCreate) SetName(s string) *LocationCreate {
+	lc.mutation.SetName(s)
+	return lc
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (lc *LocationCreate) SetNillableName(s *string) *LocationCreate {
+	if s != nil {
+		lc.SetName(*s)
+	}
+	return lc
+}
+
 // Mutation returns the LocationMutation object of the builder.
 func (lc *LocationCreate) Mutation() *LocationMutation {
 	return lc.mutation
@@ -25,6 +40,7 @@ func (lc *LocationCreate) Mutation() *LocationMutation {
 
 // Save creates the Location in the database.
 func (lc *LocationCreate) Save(ctx context.Context) (*Location, error) {
+	lc.defaults()
 	return withHooks(ctx, lc.sqlSave, lc.mutation, lc.hooks)
 }
 
@@ -50,8 +66,19 @@ func (lc *LocationCreate) ExecX(ctx context.Context) {
 	}
 }
 
+// defaults sets the default values of the builder before save.
+func (lc *LocationCreate) defaults() {
+	if _, ok := lc.mutation.Name(); !ok {
+		v := location.DefaultName
+		lc.mutation.SetName(v)
+	}
+}
+
 // check runs all checks and user-defined validators on the builder.
 func (lc *LocationCreate) check() error {
+	if _, ok := lc.mutation.Name(); !ok {
+		return &ValidationError{Name: "name", err: errors.New(`ent: missing required field "Location.name"`)}
+	}
 	return nil
 }
 
@@ -78,6 +105,10 @@ func (lc *LocationCreate) createSpec() (*Location, *sqlgraph.CreateSpec) {
 		_node = &Location{config: lc.config}
 		_spec = sqlgraph.NewCreateSpec(location.Table, sqlgraph.NewFieldSpec(location.FieldID, field.TypeInt))
 	)
+	if value, ok := lc.mutation.Name(); ok {
+		_spec.SetField(location.FieldName, field.TypeString, value)
+		_node.Name = value
+	}
 	return _node, _spec
 }
 
@@ -99,6 +130,7 @@ func (lcb *LocationCreateBulk) Save(ctx context.Context) ([]*Location, error) {
 	for i := range lcb.builders {
 		func(i int, root context.Context) {
 			builder := lcb.builders[i]
+			builder.defaults()
 			var mut Mutator = MutateFunc(func(ctx context.Context, m Mutation) (Value, error) {
 				mutation, ok := m.(*LocationMutation)
 				if !ok {

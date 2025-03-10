@@ -27,6 +27,20 @@ func (lu *LocationUpdate) Where(ps ...predicate.Location) *LocationUpdate {
 	return lu
 }
 
+// SetName sets the "name" field.
+func (lu *LocationUpdate) SetName(s string) *LocationUpdate {
+	lu.mutation.SetName(s)
+	return lu
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (lu *LocationUpdate) SetNillableName(s *string) *LocationUpdate {
+	if s != nil {
+		lu.SetName(*s)
+	}
+	return lu
+}
+
 // Mutation returns the LocationMutation object of the builder.
 func (lu *LocationUpdate) Mutation() *LocationMutation {
 	return lu.mutation
@@ -68,6 +82,9 @@ func (lu *LocationUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
+	if value, ok := lu.mutation.Name(); ok {
+		_spec.SetField(location.FieldName, field.TypeString, value)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, lu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{location.Label}
@@ -86,6 +103,20 @@ type LocationUpdateOne struct {
 	fields   []string
 	hooks    []Hook
 	mutation *LocationMutation
+}
+
+// SetName sets the "name" field.
+func (luo *LocationUpdateOne) SetName(s string) *LocationUpdateOne {
+	luo.mutation.SetName(s)
+	return luo
+}
+
+// SetNillableName sets the "name" field if the given value is not nil.
+func (luo *LocationUpdateOne) SetNillableName(s *string) *LocationUpdateOne {
+	if s != nil {
+		luo.SetName(*s)
+	}
+	return luo
 }
 
 // Mutation returns the LocationMutation object of the builder.
@@ -158,6 +189,9 @@ func (luo *LocationUpdateOne) sqlSave(ctx context.Context) (_node *Location, err
 				ps[i](selector)
 			}
 		}
+	}
+	if value, ok := luo.mutation.Name(); ok {
+		_spec.SetField(location.FieldName, field.TypeString, value)
 	}
 	_node = &Location{config: luo.config}
 	_spec.Assign = _node.assignValues
