@@ -28,6 +28,8 @@ type Client struct {
 	Location *LocationClient
 	// User is the client for interacting with the User builders.
 	User *UserClient
+	// additional fields for node api
+	tables tables
 }
 
 // NewClient creates a new client configured with the given options.
