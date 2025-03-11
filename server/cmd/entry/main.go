@@ -31,7 +31,7 @@ func main() {
 	// Configure the server and start listening on :8081.
 	srv := handler.NewDefaultServer(entry.NewSchema(client))
 	http.Handle("/",
-		playground.Handler("Todo", "/query"),
+		playground.Handler("WanderSync", "/query"),
 	)
 	http.Handle("/query", srv)
 	log.Println("listening on :8081")
