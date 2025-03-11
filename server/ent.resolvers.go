@@ -7,27 +7,26 @@ package user
 import (
 	"GabrielPedroza/WanderSync/ent"
 	"context"
-	"fmt"
 )
 
 // Node is the resolver for the node field.
 func (r *queryResolver) Node(ctx context.Context, id int) (ent.Noder, error) {
-	panic(fmt.Errorf("not implemented: Node - node"))
+	return r.client.Noder(ctx, id)
 }
 
 // Nodes is the resolver for the nodes field.
 func (r *queryResolver) Nodes(ctx context.Context, ids []int) ([]ent.Noder, error) {
-	panic(fmt.Errorf("not implemented: Nodes - nodes"))
+	return r.client.Noders(ctx, ids)
 }
 
 // Locations is the resolver for the locations field.
 func (r *queryResolver) Locations(ctx context.Context) ([]*ent.Location, error) {
-	panic(fmt.Errorf("not implemented: Locations - locations"))
+	return r.client.Location.Query().AllX(ctx), nil
 }
 
 // Users is the resolver for the users field.
 func (r *queryResolver) Users(ctx context.Context) ([]*ent.User, error) {
-	panic(fmt.Errorf("not implemented: Users - users"))
+	return r.client.User.Query().AllX(ctx), nil
 }
 
 // Query returns QueryResolver implementation.
