@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"GabrielPedroza/WanderSync/ent/location"
 	"GabrielPedroza/WanderSync/ent/schema"
 	"GabrielPedroza/WanderSync/ent/user"
 )
@@ -11,6 +12,12 @@ import (
 // (default values, validators, hooks and policies) and stitches it
 // to their package variables.
 func init() {
+	locationFields := schema.Location{}.Fields()
+	_ = locationFields
+	// locationDescName is the schema descriptor for name field.
+	locationDescName := locationFields[0].Descriptor()
+	// location.DefaultName holds the default value on creation for the name field.
+	location.DefaultName = locationDescName.Default.(string)
 	userFields := schema.User{}.Fields()
 	_ = userFields
 	// userDescName is the schema descriptor for name field.

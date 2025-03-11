@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"GabrielPedroza/WanderSync/ent/location"
 	"GabrielPedroza/WanderSync/ent/user"
 	"context"
 
@@ -23,6 +24,27 @@ func (l *LocationQuery) CollectFields(ctx context.Context, satisfies ...string) 
 
 func (l *LocationQuery) collectField(ctx context.Context, oneNode bool, opCtx *graphql.OperationContext, collected graphql.CollectedField, path []string, satisfies ...string) error {
 	path = append([]string(nil), path...)
+	var (
+		unknownSeen    bool
+		fieldSeen      = make(map[string]struct{}, len(location.Columns))
+		selectedFields = []string{location.FieldID}
+	)
+	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
+		switch field.Name {
+		case "name":
+			if _, ok := fieldSeen[location.FieldName]; !ok {
+				selectedFields = append(selectedFields, location.FieldName)
+				fieldSeen[location.FieldName] = struct{}{}
+			}
+		case "id":
+		case "__typename":
+		default:
+			unknownSeen = true
+		}
+	}
+	if !unknownSeen {
+		l.Select(selectedFields...)
+	}
 	return nil
 }
 

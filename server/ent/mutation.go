@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"GabrielPedroza/WanderSync/ent/location"
 	"GabrielPedroza/WanderSync/ent/predicate"
 	"GabrielPedroza/WanderSync/ent/user"
 	"context"
@@ -33,6 +34,7 @@ type LocationMutation struct {
 	op            Op
 	typ           string
 	id            *int
+	name          *string
 	clearedFields map[string]struct{}
 	done          bool
 	oldValue      func(context.Context) (*Location, error)
@@ -137,6 +139,42 @@ func (m *LocationMutation) IDs(ctx context.Context) ([]int, error) {
 	}
 }
 
+// SetName sets the "name" field.
+func (m *LocationMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *LocationMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the Location entity.
+// If the Location object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *LocationMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *LocationMutation) ResetName() {
+	m.name = nil
+}
+
 // Where appends a list predicates to the LocationMutation builder.
 func (m *LocationMutation) Where(ps ...predicate.Location) {
 	m.predicates = append(m.predicates, ps...)
@@ -171,7 +209,10 @@ func (m *LocationMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *LocationMutation) Fields() []string {
-	fields := make([]string, 0, 0)
+	fields := make([]string, 0, 1)
+	if m.name != nil {
+		fields = append(fields, location.FieldName)
+	}
 	return fields
 }
 
@@ -179,6 +220,10 @@ func (m *LocationMutation) Fields() []string {
 // return value indicates that this field was not set, or was not defined in the
 // schema.
 func (m *LocationMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case location.FieldName:
+		return m.Name()
+	}
 	return nil, false
 }
 
@@ -186,6 +231,10 @@ func (m *LocationMutation) Field(name string) (ent.Value, bool) {
 // returned if the mutation operation is not UpdateOne, or the query to the
 // database failed.
 func (m *LocationMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case location.FieldName:
+		return m.OldName(ctx)
+	}
 	return nil, fmt.Errorf("unknown Location field %s", name)
 }
 
@@ -194,6 +243,13 @@ func (m *LocationMutation) OldField(ctx context.Context, name string) (ent.Value
 // type.
 func (m *LocationMutation) SetField(name string, value ent.Value) error {
 	switch name {
+	case location.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Location field %s", name)
 }
@@ -215,6 +271,8 @@ func (m *LocationMutation) AddedField(name string) (ent.Value, bool) {
 // the field is not defined in the schema, or if the type mismatched the field
 // type.
 func (m *LocationMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
 	return fmt.Errorf("unknown Location numeric field %s", name)
 }
 
@@ -240,6 +298,11 @@ func (m *LocationMutation) ClearField(name string) error {
 // ResetField resets all changes in the mutation for the field with the given name.
 // It returns an error if the field is not defined in the schema.
 func (m *LocationMutation) ResetField(name string) error {
+	switch name {
+	case location.FieldName:
+		m.ResetName()
+		return nil
+	}
 	return fmt.Errorf("unknown Location field %s", name)
 }
 

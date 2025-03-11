@@ -4,10 +4,14 @@ package ent
 
 // CreateLocationInput represents a mutation input for creating locations.
 type CreateLocationInput struct {
+	Name *string
 }
 
 // Mutate applies the CreateLocationInput on the LocationMutation builder.
 func (i *CreateLocationInput) Mutate(m *LocationMutation) {
+	if v := i.Name; v != nil {
+		m.SetName(*v)
+	}
 }
 
 // SetInput applies the change-set in the CreateLocationInput on the LocationCreate builder.

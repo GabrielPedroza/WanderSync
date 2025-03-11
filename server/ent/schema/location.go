@@ -1,10 +1,10 @@
 package schema
 
 import (
-	"entgo.io/ent"
-
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent/schema"
+
+	"entgo.io/ent"
 	"entgo.io/ent/schema/field"
 )
 
