@@ -28,6 +28,10 @@ func main() {
 	); err != nil {
 		log.Fatal("opening ent client", err)
 	}
+
+	if err := addUser(client); err != nil {
+		log.Fatal("failed adding user:", err)
+	}
 	// Configure the server and start listening on :8081.
 	srv := handler.NewDefaultServer(entry.NewSchema(client))
 	http.Handle("/",
@@ -38,4 +42,18 @@ func main() {
 	if err := http.ListenAndServe(":8081", nil); err != nil {
 		log.Fatal("http server terminated", err)
 	}
+}
+
+// addUser adds a new user to the database.
+func addUser(client *ent.Client) error {
+	// Create a new user
+	u, err := client.User.Create().
+		SetName("Alice").
+		SetAge(30).
+		Save(context.Background())
+	if err != nil {
+		return err
+	}
+	log.Printf("User created: %v\n", u)
+	return nil
 }
