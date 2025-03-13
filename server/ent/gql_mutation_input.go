@@ -20,6 +20,30 @@ func (c *LocationCreate) SetInput(i CreateLocationInput) *LocationCreate {
 	return c
 }
 
+// UpdateLocationInput represents a mutation input for updating locations.
+type UpdateLocationInput struct {
+	Name *string
+}
+
+// Mutate applies the UpdateLocationInput on the LocationMutation builder.
+func (i *UpdateLocationInput) Mutate(m *LocationMutation) {
+	if v := i.Name; v != nil {
+		m.SetName(*v)
+	}
+}
+
+// SetInput applies the change-set in the UpdateLocationInput on the LocationUpdate builder.
+func (c *LocationUpdate) SetInput(i UpdateLocationInput) *LocationUpdate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// SetInput applies the change-set in the UpdateLocationInput on the LocationUpdateOne builder.
+func (c *LocationUpdateOne) SetInput(i UpdateLocationInput) *LocationUpdateOne {
+	i.Mutate(c.Mutation())
+	return c
+}
+
 // CreateUserInput represents a mutation input for creating users.
 type CreateUserInput struct {
 	Name *string
@@ -36,6 +60,34 @@ func (i *CreateUserInput) Mutate(m *UserMutation) {
 
 // SetInput applies the change-set in the CreateUserInput on the UserCreate builder.
 func (c *UserCreate) SetInput(i CreateUserInput) *UserCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// UpdateUserInput represents a mutation input for updating users.
+type UpdateUserInput struct {
+	Name *string
+	Age  *int
+}
+
+// Mutate applies the UpdateUserInput on the UserMutation builder.
+func (i *UpdateUserInput) Mutate(m *UserMutation) {
+	if v := i.Name; v != nil {
+		m.SetName(*v)
+	}
+	if v := i.Age; v != nil {
+		m.SetAge(*v)
+	}
+}
+
+// SetInput applies the change-set in the UpdateUserInput on the UserUpdate builder.
+func (c *UserUpdate) SetInput(i UpdateUserInput) *UserUpdate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// SetInput applies the change-set in the UpdateUserInput on the UserUpdateOne builder.
+func (c *UserUpdateOne) SetInput(i UpdateUserInput) *UserUpdateOne {
 	i.Mutate(c.Mutation())
 	return c
 }
