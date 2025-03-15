@@ -5,6 +5,7 @@ import (
 	"entgo.io/ent/schema"
 
 	"entgo.io/ent"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 )
 
@@ -22,7 +23,9 @@ func (Location) Fields() []ent.Field {
 
 // Edges of the Location.
 func (Location) Edges() []ent.Edge {
-	return nil
+	return []ent.Edge{
+		edge.To("users", User.Type),
+	}
 }
 
 func (Location) Annotations() []schema.Annotation {
