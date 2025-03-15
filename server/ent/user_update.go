@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"GabrielPedroza/WanderSync/ent/location"
 	"GabrielPedroza/WanderSync/ent/predicate"
 	"GabrielPedroza/WanderSync/ent/user"
 	"context"
@@ -62,9 +63,26 @@ func (uu *UserUpdate) AddAge(i int) *UserUpdate {
 	return uu
 }
 
+// SetLocationID sets the "location" edge to the Location entity by ID.
+func (uu *UserUpdate) SetLocationID(id int) *UserUpdate {
+	uu.mutation.SetLocationID(id)
+	return uu
+}
+
+// SetLocation sets the "location" edge to the Location entity.
+func (uu *UserUpdate) SetLocation(l *Location) *UserUpdate {
+	return uu.SetLocationID(l.ID)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uu *UserUpdate) Mutation() *UserMutation {
 	return uu.mutation
+}
+
+// ClearLocation clears the "location" edge to the Location entity.
+func (uu *UserUpdate) ClearLocation() *UserUpdate {
+	uu.mutation.ClearLocation()
+	return uu
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -101,6 +119,9 @@ func (uu *UserUpdate) check() error {
 			return &ValidationError{Name: "age", err: fmt.Errorf(`ent: validator failed for field "User.age": %w`, err)}
 		}
 	}
+	if uu.mutation.LocationCleared() && len(uu.mutation.LocationIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "User.location"`)
+	}
 	return nil
 }
 
@@ -124,6 +145,35 @@ func (uu *UserUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := uu.mutation.AddedAge(); ok {
 		_spec.AddField(user.FieldAge, field.TypeInt, value)
+	}
+	if uu.mutation.LocationCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   user.LocationTable,
+			Columns: []string{user.LocationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(location.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uu.mutation.LocationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   user.LocationTable,
+			Columns: []string{user.LocationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(location.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, uu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -180,9 +230,26 @@ func (uuo *UserUpdateOne) AddAge(i int) *UserUpdateOne {
 	return uuo
 }
 
+// SetLocationID sets the "location" edge to the Location entity by ID.
+func (uuo *UserUpdateOne) SetLocationID(id int) *UserUpdateOne {
+	uuo.mutation.SetLocationID(id)
+	return uuo
+}
+
+// SetLocation sets the "location" edge to the Location entity.
+func (uuo *UserUpdateOne) SetLocation(l *Location) *UserUpdateOne {
+	return uuo.SetLocationID(l.ID)
+}
+
 // Mutation returns the UserMutation object of the builder.
 func (uuo *UserUpdateOne) Mutation() *UserMutation {
 	return uuo.mutation
+}
+
+// ClearLocation clears the "location" edge to the Location entity.
+func (uuo *UserUpdateOne) ClearLocation() *UserUpdateOne {
+	uuo.mutation.ClearLocation()
+	return uuo
 }
 
 // Where appends a list predicates to the UserUpdate builder.
@@ -232,6 +299,9 @@ func (uuo *UserUpdateOne) check() error {
 			return &ValidationError{Name: "age", err: fmt.Errorf(`ent: validator failed for field "User.age": %w`, err)}
 		}
 	}
+	if uuo.mutation.LocationCleared() && len(uuo.mutation.LocationIDs()) > 0 {
+		return errors.New(`ent: clearing a required unique edge "User.location"`)
+	}
 	return nil
 }
 
@@ -272,6 +342,35 @@ func (uuo *UserUpdateOne) sqlSave(ctx context.Context) (_node *User, err error) 
 	}
 	if value, ok := uuo.mutation.AddedAge(); ok {
 		_spec.AddField(user.FieldAge, field.TypeInt, value)
+	}
+	if uuo.mutation.LocationCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   user.LocationTable,
+			Columns: []string{user.LocationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(location.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := uuo.mutation.LocationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   user.LocationTable,
+			Columns: []string{user.LocationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(location.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &User{config: uuo.config}
 	_spec.Assign = _node.assignValues

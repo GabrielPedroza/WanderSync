@@ -31,6 +31,19 @@ func (l *LocationQuery) collectField(ctx context.Context, oneNode bool, opCtx *g
 	)
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
+
+		case "users":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&UserClient{config: l.config}).Query()
+			)
+			if err := query.collectField(ctx, false, opCtx, field, path, mayAddCondition(satisfies, userImplementors)...); err != nil {
+				return err
+			}
+			l.WithNamedUsers(alias, func(wq *UserQuery) {
+				*wq = *query
+			})
 		case "name":
 			if _, ok := fieldSeen[location.FieldName]; !ok {
 				selectedFields = append(selectedFields, location.FieldName)
@@ -95,6 +108,17 @@ func (u *UserQuery) collectField(ctx context.Context, oneNode bool, opCtx *graph
 	)
 	for _, field := range graphql.CollectFields(opCtx, collected.Selections, satisfies) {
 		switch field.Name {
+
+		case "location":
+			var (
+				alias = field.Alias
+				path  = append(path, alias)
+				query = (&LocationClient{config: u.config}).Query()
+			)
+			if err := query.collectField(ctx, oneNode, opCtx, field, path, mayAddCondition(satisfies, locationImplementors)...); err != nil {
+				return err
+			}
+			u.withLocation = query
 		case "name":
 			if _, ok := fieldSeen[user.FieldName]; !ok {
 				selectedFields = append(selectedFields, user.FieldName)

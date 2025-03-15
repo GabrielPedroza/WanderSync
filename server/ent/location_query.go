@@ -5,7 +5,9 @@ package ent
 import (
 	"GabrielPedroza/WanderSync/ent/location"
 	"GabrielPedroza/WanderSync/ent/predicate"
+	"GabrielPedroza/WanderSync/ent/user"
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"math"
 
@@ -18,12 +20,14 @@ import (
 // LocationQuery is the builder for querying Location entities.
 type LocationQuery struct {
 	config
-	ctx        *QueryContext
-	order      []location.OrderOption
-	inters     []Interceptor
-	predicates []predicate.Location
-	modifiers  []func(*sql.Selector)
-	loadTotal  []func(context.Context, []*Location) error
+	ctx            *QueryContext
+	order          []location.OrderOption
+	inters         []Interceptor
+	predicates     []predicate.Location
+	withUsers      *UserQuery
+	modifiers      []func(*sql.Selector)
+	loadTotal      []func(context.Context, []*Location) error
+	withNamedUsers map[string]*UserQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -58,6 +62,28 @@ func (lq *LocationQuery) Unique(unique bool) *LocationQuery {
 func (lq *LocationQuery) Order(o ...location.OrderOption) *LocationQuery {
 	lq.order = append(lq.order, o...)
 	return lq
+}
+
+// QueryUsers chains the current query on the "users" edge.
+func (lq *LocationQuery) QueryUsers() *UserQuery {
+	query := (&UserClient{config: lq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := lq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := lq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(location.Table, location.FieldID, selector),
+			sqlgraph.To(user.Table, user.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, location.UsersTable, location.UsersColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(lq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first Location entity from the query.
@@ -252,10 +278,22 @@ func (lq *LocationQuery) Clone() *LocationQuery {
 		order:      append([]location.OrderOption{}, lq.order...),
 		inters:     append([]Interceptor{}, lq.inters...),
 		predicates: append([]predicate.Location{}, lq.predicates...),
+		withUsers:  lq.withUsers.Clone(),
 		// clone intermediate query.
 		sql:  lq.sql.Clone(),
 		path: lq.path,
 	}
+}
+
+// WithUsers tells the query-builder to eager-load the nodes that are connected to
+// the "users" edge. The optional arguments are used to configure the query builder of the edge.
+func (lq *LocationQuery) WithUsers(opts ...func(*UserQuery)) *LocationQuery {
+	query := (&UserClient{config: lq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	lq.withUsers = query
+	return lq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -334,8 +372,11 @@ func (lq *LocationQuery) prepareQuery(ctx context.Context) error {
 
 func (lq *LocationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Location, error) {
 	var (
-		nodes = []*Location{}
-		_spec = lq.querySpec()
+		nodes       = []*Location{}
+		_spec       = lq.querySpec()
+		loadedTypes = [1]bool{
+			lq.withUsers != nil,
+		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Location).scanValues(nil, columns)
@@ -343,6 +384,7 @@ func (lq *LocationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Loc
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &Location{config: lq.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	if len(lq.modifiers) > 0 {
@@ -357,12 +399,58 @@ func (lq *LocationQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Loc
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := lq.withUsers; query != nil {
+		if err := lq.loadUsers(ctx, query, nodes,
+			func(n *Location) { n.Edges.Users = []*User{} },
+			func(n *Location, e *User) { n.Edges.Users = append(n.Edges.Users, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range lq.withNamedUsers {
+		if err := lq.loadUsers(ctx, query, nodes,
+			func(n *Location) { n.appendNamedUsers(name) },
+			func(n *Location, e *User) { n.appendNamedUsers(name, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for i := range lq.loadTotal {
 		if err := lq.loadTotal[i](ctx, nodes); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
+}
+
+func (lq *LocationQuery) loadUsers(ctx context.Context, query *UserQuery, nodes []*Location, init func(*Location), assign func(*Location, *User)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Location)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.User(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(location.UsersColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.location_users
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "location_users" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "location_users" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
 }
 
 func (lq *LocationQuery) sqlCount(ctx context.Context) (int, error) {
@@ -447,6 +535,20 @@ func (lq *LocationQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector.Limit(*limit)
 	}
 	return selector
+}
+
+// WithNamedUsers tells the query-builder to eager-load the nodes that are connected to the "users"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (lq *LocationQuery) WithNamedUsers(name string, opts ...func(*UserQuery)) *LocationQuery {
+	query := (&UserClient{config: lq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if lq.withNamedUsers == nil {
+		lq.withNamedUsers = make(map[string]*UserQuery)
+	}
+	lq.withNamedUsers[name] = query
+	return lq
 }
 
 // LocationGroupBy is the group-by builder for Location entities.

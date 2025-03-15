@@ -3,6 +3,7 @@
 package ent
 
 import (
+	"GabrielPedroza/WanderSync/ent/location"
 	"GabrielPedroza/WanderSync/ent/user"
 	"context"
 	"errors"
@@ -37,6 +38,17 @@ func (uc *UserCreate) SetNillableName(s *string) *UserCreate {
 func (uc *UserCreate) SetAge(i int) *UserCreate {
 	uc.mutation.SetAge(i)
 	return uc
+}
+
+// SetLocationID sets the "location" edge to the Location entity by ID.
+func (uc *UserCreate) SetLocationID(id int) *UserCreate {
+	uc.mutation.SetLocationID(id)
+	return uc
+}
+
+// SetLocation sets the "location" edge to the Location entity.
+func (uc *UserCreate) SetLocation(l *Location) *UserCreate {
+	return uc.SetLocationID(l.ID)
 }
 
 // Mutation returns the UserMutation object of the builder.
@@ -93,6 +105,9 @@ func (uc *UserCreate) check() error {
 			return &ValidationError{Name: "age", err: fmt.Errorf(`ent: validator failed for field "User.age": %w`, err)}
 		}
 	}
+	if len(uc.mutation.LocationIDs()) == 0 {
+		return &ValidationError{Name: "location", err: errors.New(`ent: missing required edge "User.location"`)}
+	}
 	return nil
 }
 
@@ -126,6 +141,23 @@ func (uc *UserCreate) createSpec() (*User, *sqlgraph.CreateSpec) {
 	if value, ok := uc.mutation.Age(); ok {
 		_spec.SetField(user.FieldAge, field.TypeInt, value)
 		_node.Age = value
+	}
+	if nodes := uc.mutation.LocationIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: true,
+			Table:   user.LocationTable,
+			Columns: []string{user.LocationColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(location.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.location_users = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

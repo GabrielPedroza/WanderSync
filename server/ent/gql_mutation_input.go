@@ -4,13 +4,17 @@ package ent
 
 // CreateLocationInput represents a mutation input for creating locations.
 type CreateLocationInput struct {
-	Name *string
+	Name    *string
+	UserIDs []int
 }
 
 // Mutate applies the CreateLocationInput on the LocationMutation builder.
 func (i *CreateLocationInput) Mutate(m *LocationMutation) {
 	if v := i.Name; v != nil {
 		m.SetName(*v)
+	}
+	if v := i.UserIDs; len(v) > 0 {
+		m.AddUserIDs(v...)
 	}
 }
 
@@ -22,13 +26,25 @@ func (c *LocationCreate) SetInput(i CreateLocationInput) *LocationCreate {
 
 // UpdateLocationInput represents a mutation input for updating locations.
 type UpdateLocationInput struct {
-	Name *string
+	Name          *string
+	ClearUsers    bool
+	AddUserIDs    []int
+	RemoveUserIDs []int
 }
 
 // Mutate applies the UpdateLocationInput on the LocationMutation builder.
 func (i *UpdateLocationInput) Mutate(m *LocationMutation) {
 	if v := i.Name; v != nil {
 		m.SetName(*v)
+	}
+	if i.ClearUsers {
+		m.ClearUsers()
+	}
+	if v := i.AddUserIDs; len(v) > 0 {
+		m.AddUserIDs(v...)
+	}
+	if v := i.RemoveUserIDs; len(v) > 0 {
+		m.RemoveUserIDs(v...)
 	}
 }
 
@@ -46,8 +62,9 @@ func (c *LocationUpdateOne) SetInput(i UpdateLocationInput) *LocationUpdateOne {
 
 // CreateUserInput represents a mutation input for creating users.
 type CreateUserInput struct {
-	Name *string
-	Age  int
+	Name       *string
+	Age        int
+	LocationID int
 }
 
 // Mutate applies the CreateUserInput on the UserMutation builder.
@@ -56,6 +73,7 @@ func (i *CreateUserInput) Mutate(m *UserMutation) {
 		m.SetName(*v)
 	}
 	m.SetAge(i.Age)
+	m.SetLocationID(i.LocationID)
 }
 
 // SetInput applies the change-set in the CreateUserInput on the UserCreate builder.
@@ -66,8 +84,9 @@ func (c *UserCreate) SetInput(i CreateUserInput) *UserCreate {
 
 // UpdateUserInput represents a mutation input for updating users.
 type UpdateUserInput struct {
-	Name *string
-	Age  *int
+	Name       *string
+	Age        *int
+	LocationID *int
 }
 
 // Mutate applies the UpdateUserInput on the UserMutation builder.
@@ -77,6 +96,9 @@ func (i *UpdateUserInput) Mutate(m *UserMutation) {
 	}
 	if v := i.Age; v != nil {
 		m.SetAge(*v)
+	}
+	if v := i.LocationID; v != nil {
+		m.SetLocationID(*v)
 	}
 }
 

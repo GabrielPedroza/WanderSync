@@ -5,6 +5,7 @@ package ent
 import (
 	"GabrielPedroza/WanderSync/ent/location"
 	"GabrielPedroza/WanderSync/ent/predicate"
+	"GabrielPedroza/WanderSync/ent/user"
 	"context"
 	"errors"
 	"fmt"
@@ -41,9 +42,45 @@ func (lu *LocationUpdate) SetNillableName(s *string) *LocationUpdate {
 	return lu
 }
 
+// AddUserIDs adds the "users" edge to the User entity by IDs.
+func (lu *LocationUpdate) AddUserIDs(ids ...int) *LocationUpdate {
+	lu.mutation.AddUserIDs(ids...)
+	return lu
+}
+
+// AddUsers adds the "users" edges to the User entity.
+func (lu *LocationUpdate) AddUsers(u ...*User) *LocationUpdate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return lu.AddUserIDs(ids...)
+}
+
 // Mutation returns the LocationMutation object of the builder.
 func (lu *LocationUpdate) Mutation() *LocationMutation {
 	return lu.mutation
+}
+
+// ClearUsers clears all "users" edges to the User entity.
+func (lu *LocationUpdate) ClearUsers() *LocationUpdate {
+	lu.mutation.ClearUsers()
+	return lu
+}
+
+// RemoveUserIDs removes the "users" edge to User entities by IDs.
+func (lu *LocationUpdate) RemoveUserIDs(ids ...int) *LocationUpdate {
+	lu.mutation.RemoveUserIDs(ids...)
+	return lu
+}
+
+// RemoveUsers removes "users" edges to User entities.
+func (lu *LocationUpdate) RemoveUsers(u ...*User) *LocationUpdate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return lu.RemoveUserIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -85,6 +122,51 @@ func (lu *LocationUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := lu.mutation.Name(); ok {
 		_spec.SetField(location.FieldName, field.TypeString, value)
 	}
+	if lu.mutation.UsersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   location.UsersTable,
+			Columns: []string{location.UsersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := lu.mutation.RemovedUsersIDs(); len(nodes) > 0 && !lu.mutation.UsersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   location.UsersTable,
+			Columns: []string{location.UsersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := lu.mutation.UsersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   location.UsersTable,
+			Columns: []string{location.UsersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if n, err = sqlgraph.UpdateNodes(ctx, lu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{location.Label}
@@ -119,9 +201,45 @@ func (luo *LocationUpdateOne) SetNillableName(s *string) *LocationUpdateOne {
 	return luo
 }
 
+// AddUserIDs adds the "users" edge to the User entity by IDs.
+func (luo *LocationUpdateOne) AddUserIDs(ids ...int) *LocationUpdateOne {
+	luo.mutation.AddUserIDs(ids...)
+	return luo
+}
+
+// AddUsers adds the "users" edges to the User entity.
+func (luo *LocationUpdateOne) AddUsers(u ...*User) *LocationUpdateOne {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return luo.AddUserIDs(ids...)
+}
+
 // Mutation returns the LocationMutation object of the builder.
 func (luo *LocationUpdateOne) Mutation() *LocationMutation {
 	return luo.mutation
+}
+
+// ClearUsers clears all "users" edges to the User entity.
+func (luo *LocationUpdateOne) ClearUsers() *LocationUpdateOne {
+	luo.mutation.ClearUsers()
+	return luo
+}
+
+// RemoveUserIDs removes the "users" edge to User entities by IDs.
+func (luo *LocationUpdateOne) RemoveUserIDs(ids ...int) *LocationUpdateOne {
+	luo.mutation.RemoveUserIDs(ids...)
+	return luo
+}
+
+// RemoveUsers removes "users" edges to User entities.
+func (luo *LocationUpdateOne) RemoveUsers(u ...*User) *LocationUpdateOne {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return luo.RemoveUserIDs(ids...)
 }
 
 // Where appends a list predicates to the LocationUpdate builder.
@@ -192,6 +310,51 @@ func (luo *LocationUpdateOne) sqlSave(ctx context.Context) (_node *Location, err
 	}
 	if value, ok := luo.mutation.Name(); ok {
 		_spec.SetField(location.FieldName, field.TypeString, value)
+	}
+	if luo.mutation.UsersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   location.UsersTable,
+			Columns: []string{location.UsersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := luo.mutation.RemovedUsersIDs(); len(nodes) > 0 && !luo.mutation.UsersCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   location.UsersTable,
+			Columns: []string{location.UsersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := luo.mutation.UsersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   location.UsersTable,
+			Columns: []string{location.UsersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Location{config: luo.config}
 	_spec.Assign = _node.assignValues

@@ -4,6 +4,7 @@ package ent
 
 import (
 	"GabrielPedroza/WanderSync/ent/location"
+	"GabrielPedroza/WanderSync/ent/user"
 	"context"
 	"errors"
 	"fmt"
@@ -31,6 +32,21 @@ func (lc *LocationCreate) SetNillableName(s *string) *LocationCreate {
 		lc.SetName(*s)
 	}
 	return lc
+}
+
+// AddUserIDs adds the "users" edge to the User entity by IDs.
+func (lc *LocationCreate) AddUserIDs(ids ...int) *LocationCreate {
+	lc.mutation.AddUserIDs(ids...)
+	return lc
+}
+
+// AddUsers adds the "users" edges to the User entity.
+func (lc *LocationCreate) AddUsers(u ...*User) *LocationCreate {
+	ids := make([]int, len(u))
+	for i := range u {
+		ids[i] = u[i].ID
+	}
+	return lc.AddUserIDs(ids...)
 }
 
 // Mutation returns the LocationMutation object of the builder.
@@ -108,6 +124,22 @@ func (lc *LocationCreate) createSpec() (*Location, *sqlgraph.CreateSpec) {
 	if value, ok := lc.mutation.Name(); ok {
 		_spec.SetField(location.FieldName, field.TypeString, value)
 		_node.Name = value
+	}
+	if nodes := lc.mutation.UsersIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   location.UsersTable,
+			Columns: []string{location.UsersColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(user.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

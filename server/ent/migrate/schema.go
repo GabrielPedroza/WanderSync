@@ -24,12 +24,21 @@ var (
 		{Name: "id", Type: field.TypeInt, Increment: true},
 		{Name: "name", Type: field.TypeString, Size: 2147483647, Default: "Unknown"},
 		{Name: "age", Type: field.TypeInt},
+		{Name: "location_users", Type: field.TypeInt},
 	}
 	// UsersTable holds the schema information for the "users" table.
 	UsersTable = &schema.Table{
 		Name:       "users",
 		Columns:    UsersColumns,
 		PrimaryKey: []*schema.Column{UsersColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "users_locations_users",
+				Columns:    []*schema.Column{UsersColumns[3]},
+				RefColumns: []*schema.Column{LocationsColumns[0]},
+				OnDelete:   schema.NoAction,
+			},
+		},
 	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
@@ -39,4 +48,5 @@ var (
 )
 
 func init() {
+	UsersTable.ForeignKeys[0].RefTable = LocationsTable
 }
