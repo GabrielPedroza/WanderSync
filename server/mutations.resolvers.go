@@ -19,6 +19,16 @@ func (r *mutationResolver) UpdateUser(ctx context.Context, id int, input ent.Upd
 	return r.client.User.UpdateOneID(id).SetInput(input).Save(ctx)
 }
 
+// CreateLocation is the resolver for the createLocation field.
+func (r *mutationResolver) CreateLocation(ctx context.Context, input ent.CreateLocationInput) (*ent.Location, error) {
+	return r.client.Location.Create().SetInput(input).Save(ctx)
+}
+
+// UpdateLocation is the resolver for the updateLocation field.
+func (r *mutationResolver) UpdateLocation(ctx context.Context, id int, input ent.UpdateLocationInput) (*ent.Location, error) {
+	return r.client.Location.UpdateOneID(id).SetInput(input).Save(ctx)
+}
+
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
