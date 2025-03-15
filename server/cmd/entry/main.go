@@ -46,14 +46,22 @@ func main() {
 
 // addUser adds a new user to the database.
 func addUser(client *ent.Client) error {
+	// Create a new location
+	l, err := client.Location.Create().SetName("Miami").Save(context.Background())
+	if err != nil {
+		return err
+	}
+
 	// Create a new user
 	u, err := client.User.Create().
 		SetName("Alice").
 		SetAge(30).
+		SetLocation(l).
 		Save(context.Background())
 	if err != nil {
 		return err
 	}
-	log.Printf("User created: %v\n", u)
+
+	log.Printf("User created with their location: %v\n", u)
 	return nil
 }
