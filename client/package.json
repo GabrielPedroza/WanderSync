@@ -5,8 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "relay": "relay-compiler --watch",
     "build": "vite build",
     "preview": "vite preview"
+  },
+    "relay": {
+    "src": "./src",
+    "schema": "../server/ent.graphql",
+    "language": "javascript"
   },
   "dependencies": {
     "graphql": "^16.10.0",
